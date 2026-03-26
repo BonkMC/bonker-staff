@@ -15,7 +15,7 @@ from bot_instance import staff_role_check  # Import role_check from bot_instance
     required=True,
     opt_type=OptionType.STRING
 )
-@staff_role_check(exclude=["Trainee", "Helper", "Moderator"])
+@staff_role_check(exclude=["Owner", "Co-Owner", "Management", "Developer"], exclude_acts_as_include=True)
 async def handle_dm_command(ctx: SlashContext, user, message: str):
     user = ctx.guild.get_member(user)
     embed = Embed(description=message, color=colors.DiscordColors.BLUE)

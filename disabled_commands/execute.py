@@ -4,7 +4,7 @@ from pydactyl import PterodactylClient
 from bot_instance import staff_role_check,AppConfig_obj  # Import role_check from bot_instance
 
 key = AppConfig_obj.get_bonk_panel_api_key()
-api = PterodactylClient('https://bonkpanel.ddns.net:5983', key)
+api = PterodactylClient('https://panel.bonkmc.org', key)
 
 @slash_command(
     name="execute",
@@ -18,7 +18,7 @@ api = PterodactylClient('https://bonkpanel.ddns.net:5983', key)
 )
 @staff_role_check(exclude=["Manager", "Admin", "Owner", "Developer"], exclude_acts_as_include=True)
 async def handle_execute_command(ctx: SlashContext, command):
-    srv_id = "df4e1f23-2fd0-4568-b655-9c636280e3ac"
+    srv_id = "0"
     try:
         api.client.servers.send_console_command(srv_id, command)
         await ctx.send(

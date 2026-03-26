@@ -1,24 +1,24 @@
 from interactions import slash_command, SlashContext, Embed, OptionType, slash_option
 import asyncio
 from datetime import datetime, timedelta
+import json
 
-from bot_instance import bot
+from bot_instance import bot, staff_role_check
 from utils import colors
-from utils.constants import (
-    CODE_RED_CHANNEL_ID, 
-    CODE_RED_ALLOWED_ROLES, 
-    CODE_RED_PING_ROLES,
-    HIGHER_UPS_ROLE_ID,
-    DEVELOPER_ROLE_ID
-)
+
+CODE_RED_CHANNEL_ID = 1408935016502657167
 
 code_red_cooldowns = {}
 
-def code_red_role_check():
-    async def predicate(ctx: SlashContext):
-        user_roles = [int(role.id) for role in ctx.author.roles]
-        return any(role_id in user_roles for role_id in CODE_RED_ALLOWED_ROLES)
-    return predicate
+
+def load_ping_roles():
+    with open('data/roleslist.json') as f:
+        roles_dict = json.load(f)
+    ping_roles = []
+    for role_name in ["Management", "Developer"]:
+        if role_name in roles_dict:
+            ping_roles.extend(roles_dict[role_name])
+    return ping_roles
 
 
 @slash_command(name="code-red", description="Issue a code red alert for critical issues")
@@ -28,6 +28,7 @@ def code_red_role_check():
     required=True,
     opt_type=OptionType.STRING
 )
+@staff_role_check(exclude=["Trainee"])
 async def handle_code_red_command(ctx: SlashContext, ongoing_issue: str):
     current_time = datetime.now()
     user_id = ctx.author.id
@@ -48,15 +49,6 @@ async def handle_code_red_command(ctx: SlashContext, ongoing_issue: str):
             )
             await ctx.send(embeds=cooldown_embed, ephemeral=True)
             return
-    
-    if not await code_red_role_check()(ctx):
-        error_embed = Embed(
-            title="❌ Access Denied",
-            description="You don't have permission to use this command.",
-            color=colors.DiscordColors.RED
-        )
-        await ctx.send(embeds=error_embed, ephemeral=True)
-        return
 
     code_red_embed = Embed(
         title="🚨 CODE RED ALERT 🚨",
@@ -82,7 +74,8 @@ async def handle_code_red_command(ctx: SlashContext, ongoing_issue: str):
         await ctx.send(embeds=error_embed, ephemeral=True)
         return
     
-    role_mentions = f"<@&{HIGHER_UPS_ROLE_ID}> <@&{DEVELOPER_ROLE_ID}>"
+    ping_roles = load_ping_roles()
+    role_mentions = " ".join(f"<@&{role_id}>" for role_id in ping_roles)
     
     alert_message = await code_red_channel.send(
         content=role_mentions,
@@ -101,7 +94,7 @@ async def handle_code_red_command(ctx: SlashContext, ongoing_issue: str):
     )
     await thread.send(embeds=thread_embed)
     
-    await dm_role_members(ctx, CODE_RED_PING_ROLES, ctx.author, ongoing_issue)
+    await dm_role_members(ctx, ping_roles, ctx.author, ongoing_issue)
     
     code_red_cooldowns[user_id] = current_time
     

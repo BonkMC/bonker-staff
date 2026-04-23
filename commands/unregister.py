@@ -12,7 +12,7 @@ from utils.server_utils import is_server_online, send_server_command
     required=True,
     opt_type=OptionType.STRING
 )
-@staff_role_check(exclude=["Owner", "Co-Owner", "Management"], exclude_acts_as_include=True)
+@staff_role_check(exclude=["Owner", "Co-Owner", "Management","Administrator"], exclude_acts_as_include=True)
 async def handle_unregister_command(ctx: SlashContext, username: str):
     await ctx.defer()
     

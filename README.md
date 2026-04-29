@@ -1,1 +1,1 @@
-coming soon i too lazy
+coming soon im too lazy

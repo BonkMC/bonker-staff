@@ -127,37 +127,20 @@ async def dm_role_members(ctx: SlashContext, role_ids: list[int], issuer, issue_
         print("No guild on ctx")
         return
 
-    members_to_dm = set()
-
-    fetched = []
     try:
-        fetched = [m async for m in guild.fetch_members(limit=None)]
-        print(f"Fetched {len(fetched)} guild members")
+        await guild.chunk()
     except Exception as e:
-        print(f"fetch_members not available / failed: {e}")
+        print(f"guild.chunk() failed (continuing with cached members): {e}")
 
-    if fetched:
-        for member in fetched:
-            if getattr(member.user, "bot", False):
-                continue
-            member_roles = {int(r.id) for r in member.roles}
-            if any(rid in member_roles for rid in role_ids):
-                members_to_dm.add(member)
-    else:
-        print("Falling back to role.members (cache-dependent)")
-        for role_id in role_ids:
-            role = guild.get_role(role_id)
-            if not role:
-                print(f"Role not found in cache: {role_id}")
-                continue
-            for member in getattr(role, "members", []):
-                if getattr(member.user, "bot", False):
-                    continue
-                members_to_dm.add(member)
+    role_id_set = set(role_ids)
+    members_to_dm = {
+        member
+        for member in guild.members
+        if not getattr(member.user, "bot", False)
+        and any(int(r.id) in role_id_set for r in member.roles)
+    }
 
-    print(f"Total members to DM (including issuer): {len(members_to_dm)}")
-
-    print(f"Total members to DM (final): {len(members_to_dm)}")
+    print(f"Total members to DM: {len(members_to_dm)}")
 
     if members_to_dm:
         dm_tasks = [send_dm_safely(m, dm_embed) for m in members_to_dm]
